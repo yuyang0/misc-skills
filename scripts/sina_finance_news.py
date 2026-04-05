@@ -127,7 +127,6 @@ class SinaFinanceNewsCrawler:
             session = self._get_session()
             resp = session.get(url)
             if resp.status != 200:
-                print(f"请求失败，状态码: {resp.status}")
                 return None
 
             # 从原始字节中提取 HTML 声明的编码
@@ -142,7 +141,6 @@ class SinaFinanceNewsCrawler:
 
             return resp
         except Exception as e:
-            print(f"请求失败: {e}")
             return None
 
     def _parse_hk_news(self, resp: Adaptor) -> List[Dict]:
@@ -157,7 +155,6 @@ class SinaFinanceNewsCrawler:
         news_list = []
         ul = resp.css('ul.list01')
         if not ul:
-            print("港股: 未找到 ul.list01 容器")
             return news_list
 
         for li in ul[0].css('li'):
@@ -197,7 +194,6 @@ class SinaFinanceNewsCrawler:
         news_list = []
         ul = resp.css('ul.xb_list')
         if not ul:
-            print("美股: 未找到 ul.xb_list 容器")
             return news_list
 
         for li in ul[0].css('li'):
@@ -239,7 +235,6 @@ class SinaFinanceNewsCrawler:
         news_list = []
         dl = resp.css('.datelist')
         if not dl:
-            print("A股: 未找到 .datelist 容器")
             return news_list
 
         inner = html.unescape(dl[0].html_content or '')
@@ -262,7 +257,6 @@ class SinaFinanceNewsCrawler:
     def _scrape_news_page(self, market_type: str, code: str, max_news: int) -> List[Dict]:
         """爬取第一页新闻，截取至 max_news 条"""
         url = self._build_news_url(market_type, code)
-        print(f"正在访问: {url}")
 
         resp = self._fetch(url)
         if resp is None:
@@ -275,7 +269,6 @@ class SinaFinanceNewsCrawler:
         else:  # sh / sz
             news_list = self._parse_ashare_news(resp)
 
-        print(f"解析到 {len(news_list)} 条新闻")
         return news_list[:max_news]
 
     def get_stock_news(self, stock_code: str, max_news: int = 20) -> List[Dict]:
@@ -300,7 +293,6 @@ class SinaFinanceNewsCrawler:
         """
         try:
             market_type, code = self._parse_stock_code(stock_code)
-            print(f"正在获取 {stock_code} 的新闻...")
 
             news_list = self._scrape_news_page(market_type, code, max_news)
 
@@ -312,14 +304,11 @@ class SinaFinanceNewsCrawler:
                     seen_titles.add(news['title'])
                     unique_news.append(news)
 
-            print(f"成功获取 {len(unique_news)} 条新闻")
             return unique_news[:max_news]
 
         except ValueError as e:
-            print(f"参数错误: {e}")
             return []
         except Exception as e:
-            print(f"获取新闻失败: {e}")
             import traceback
             traceback.print_exc()
             return []
@@ -343,14 +332,10 @@ class SinaFinanceNewsCrawler:
         """
         result = {}
         total = len(stock_codes)
-        print(f"\n开始批量获取 {total} 只股票的新闻...\n")
 
         for i, stock_code in enumerate(stock_codes, 1):
-            print(f"[{i}/{total}] 处理股票: {stock_code}")
             result[stock_code] = self.get_stock_news(stock_code, max_news=max_news)
-            print()
 
-        print(f"批量获取完成！共处理 {total} 只股票")
         return result
 
 

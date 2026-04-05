@@ -8,6 +8,7 @@ import html
 import time
 import json
 import re
+import random
 from typing import List, Dict, Optional
 
 from scrapling.fetchers import FetcherSession
@@ -51,11 +52,20 @@ class SinaFinanceNewsCrawler:
         return self._session
 
     def _rate_limit(self):
-        """频率控制"""
+        """
+        频率控制，加入随机延迟避免固定模式
+
+        实际延迟时间为 delay ± 20% 的随机值，更接近真实用户行为
+        """
         current_time = time.time()
         elapsed = current_time - self.last_request_time
-        if elapsed < self.delay:
-            time.sleep(self.delay - elapsed)
+
+        # 在基础延迟上加入 ±20% 的随机波动
+        random_factor = random.uniform(0.8, 1.2)
+        actual_delay = self.delay * random_factor
+
+        if elapsed < actual_delay:
+            time.sleep(actual_delay - elapsed)
         self.last_request_time = time.time()
 
     def _parse_stock_code(self, stock_code: str) -> tuple:

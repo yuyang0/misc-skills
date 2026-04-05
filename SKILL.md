@@ -26,17 +26,17 @@ This skill provides a Python tool to fetch news for one or multiple stock symbol
 
 **Fetch news for a single stock:**
 ```bash
-python3 {baseDir}/sina_finance_news.py HK.00700
+python3 {baseDir}/scripts/sina_finance_news.py HK.00700
 ```
 
 **Fetch news for multiple stocks:**
 ```bash
-python3 {baseDir}/sina_finance_news.py HK.00700 US.AAPL SH.600519 --max 10
+python3 {baseDir}/scripts/sina_finance_news.py HK.00700 US.AAPL SH.600519 --max 10
 ```
 
 **Output in JSON format:**
 ```bash
-python3 {baseDir}/sina_finance_news.py HK.00700 --json
+python3 {baseDir}/scripts/sina_finance_news.py HK.00700 --json
 ```
 
 ## Command Line Options
@@ -48,9 +48,12 @@ python3 {baseDir}/sina_finance_news.py HK.00700 --json
 
 ## Python API
 
-You can also use this as a Python module:
+You can also use this as a Python module by adding the scripts directory to your path:
 
 ```python
+import sys
+sys.path.insert(0, '{baseDir}/scripts')
+
 from sina_finance_news import SinaFinanceNewsCrawler
 
 with SinaFinanceNewsCrawler(delay=1.5) as crawler:
@@ -94,4 +97,4 @@ Dependencies are automatically installed via the skill metadata. The skill requi
 
 ## Source
 
-The main implementation is in `sina_finance_news.py` in this skill directory.
+The main implementation is in `scripts/sina_finance_news.py` in this skill directory.

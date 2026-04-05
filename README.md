@@ -100,51 +100,51 @@ SKILL 的元数据定义在 `SKILL.md` 文件中，包括：
 
 ```bash
 # 获取腾讯(港股)的新闻
-python sina_finance_news.py HK.00700
+python scripts/sina_finance_news.py HK.00700
 
 # 获取苹果(美股)的新闻
-python sina_finance_news.py US.AAPL
+python scripts/sina_finance_news.py US.AAPL
 
 # 获取贵州茅台(上海A股)的新闻
-python sina_finance_news.py SH.600519
+python scripts/sina_finance_news.py SH.600519
 
 # 获取平安银行(深圳A股)的新闻
-python sina_finance_news.py SZ.000001
+python scripts/sina_finance_news.py SZ.000001
 ```
 
 #### 多只股票批量查询
 
 ```bash
 # 查询多只股票（空格分隔）
-python sina_finance_news.py HK.00700 US.AAPL SH.600519
+python scripts/sina_finance_news.py HK.00700 US.AAPL SH.600519
 
 # 查询多只港股
-python sina_finance_news.py HK.00700 HK.00981 HK.00005
+python scripts/sina_finance_news.py HK.00700 HK.00981 HK.00005
 
 # 查询不同市场的股票
-python sina_finance_news.py HK.00700 US.AAPL SH.600519 SZ.000001
+python scripts/sina_finance_news.py HK.00700 US.AAPL SH.600519 SZ.000001
 ```
 
 #### 高级选项
 
 ```bash
 # 单只股票：获取最多10条新闻
-python sina_finance_news.py HK.00700 --max 10
+python scripts/sina_finance_news.py HK.00700 --max 10
 
 # 多只股票：每只获取5条新闻
-python sina_finance_news.py HK.00700 US.AAPL --max 5
+python scripts/sina_finance_news.py HK.00700 US.AAPL --max 5
 
 # 设置请求间隔为2秒（更安全的反爬策略）
-python sina_finance_news.py HK.00700 --delay 2
+python scripts/sina_finance_news.py HK.00700 --delay 2
 
 # 以JSON格式输出
-python sina_finance_news.py HK.00700 --json
+python scripts/sina_finance_news.py HK.00700 --json
 
 # 多只股票，JSON格式输出
-python sina_finance_news.py HK.00700 US.AAPL SH.600519 --json
+python scripts/sina_finance_news.py HK.00700 US.AAPL SH.600519 --json
 
 # 组合使用
-python sina_finance_news.py HK.00700 US.AAPL --max 10 --delay 2 --json
+python scripts/sina_finance_news.py HK.00700 US.AAPL --max 10 --delay 2 --json
 ```
 
 ### 作为Python模块使用
@@ -152,6 +152,9 @@ python sina_finance_news.py HK.00700 US.AAPL --max 10 --delay 2 --json
 #### 单只股票查询
 
 ```python
+import sys
+sys.path.insert(0, 'scripts')
+
 from sina_finance_news import SinaFinanceNewsCrawler
 
 # 创建爬虫实例（设置请求间隔为1.5秒）
@@ -171,6 +174,9 @@ for news in news_list:
 #### 多只股票批量查询
 
 ```python
+import sys
+sys.path.insert(0, 'scripts')
+
 from sina_finance_news import SinaFinanceNewsCrawler
 
 # 创建爬虫实例
@@ -189,9 +195,14 @@ for stock_code, news_list in all_news.items():
 
 ### 高级用法示例
 
+更多完整示例请参考 `scripts/README.md` 文件。
+
 #### 保存多只股票新闻到JSON文件
 
 ```python
+import sys
+sys.path.insert(0, 'scripts')
+
 from sina_finance_news import SinaFinanceNewsCrawler
 import json
 from datetime import datetime
@@ -218,6 +229,9 @@ print("\n新闻数据已保存到 stock_news.json")
 #### 根据关键词过滤多只股票的新闻
 
 ```python
+import sys
+sys.path.insert(0, 'scripts')
+
 from sina_finance_news import SinaFinanceNewsCrawler
 
 crawler = SinaFinanceNewsCrawler(delay=1.5)
@@ -280,7 +294,7 @@ for stock_code, news_list in all_news.items():
 
 本工具实施了以下反爬策略：
 
-1. **频率控制**：默认每次请求间隔1秒，可通过 `delay` 参数调整
+1. **智能频率控制**：默认每次请求间隔1秒，但加入了 ±20% 的随机波动，避免固定模式被识别
 2. **User-Agent模拟**：模拟真实浏览器访问
 3. **会话保持**：使用 `requests.Session` 保持会话，模拟用户行为
 4. **请求头设置**：包含 Referer、Accept-Language 等完整请求头
@@ -291,6 +305,7 @@ for stock_code, news_list in all_news.items():
 - 避免短时间内大量请求
 - 遵守网站的 robots.txt 规则
 - 合理使用，不对服务器造成过大压力
+- 随机延迟会自动将实际延迟时间调整为设置值的 80%-120%，更接近真实用户行为
 
 ## 命令行参数说明
 

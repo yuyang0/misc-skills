@@ -9,10 +9,14 @@ import time
 import json
 import re
 import random
+import logging
 from typing import List, Dict, Optional
 
 from scrapling.fetchers import FetcherSession
 from scrapling.parser import Adaptor
+
+# 配置日志
+logger = logging.getLogger(__name__)
 
 
 class SinaFinanceNewsCrawler:
@@ -127,6 +131,7 @@ class SinaFinanceNewsCrawler:
             session = self._get_session()
             resp = session.get(url)
             if resp.status != 200:
+                logger.warning(f"请求失败，状态码: {resp.status}, URL: {url}")
                 return None
 
             # 从原始字节中提取 HTML 声明的编码
@@ -141,6 +146,7 @@ class SinaFinanceNewsCrawler:
 
             return resp
         except Exception as e:
+            logger.error(f"请求失败: {e}, URL: {url}")
             return None
 
     def _parse_hk_news(self, resp: Adaptor) -> List[Dict]:
@@ -155,6 +161,7 @@ class SinaFinanceNewsCrawler:
         news_list = []
         ul = resp.css('ul.list01')
         if not ul:
+            logger.debug("港股: 未找到 ul.list01 容器")
             return news_list
 
         for li in ul[0].css('li'):
@@ -194,6 +201,7 @@ class SinaFinanceNewsCrawler:
         news_list = []
         ul = resp.css('ul.xb_list')
         if not ul:
+            logger.debug("美股: 未找到 ul.xb_list 容器")
             return news_list
 
         for li in ul[0].css('li'):
@@ -235,6 +243,7 @@ class SinaFinanceNewsCrawler:
         news_list = []
         dl = resp.css('.datelist')
         if not dl:
+            logger.debug("A股: 未找到 .datelist 容器")
             return news_list
 
         inner = html.unescape(dl[0].html_content or '')
@@ -257,6 +266,7 @@ class SinaFinanceNewsCrawler:
     def _scrape_news_page(self, market_type: str, code: str, max_news: int) -> List[Dict]:
         """爬取第一页新闻，截取至 max_news 条"""
         url = self._build_news_url(market_type, code)
+        logger.info(f"正在访问: {url}")
 
         resp = self._fetch(url)
         if resp is None:
@@ -269,6 +279,7 @@ class SinaFinanceNewsCrawler:
         else:  # sh / sz
             news_list = self._parse_ashare_news(resp)
 
+        logger.info(f"解析到 {len(news_list)} 条新闻")
         return news_list[:max_news]
 
     def get_stock_news(self, stock_code: str, max_news: int = 20) -> List[Dict]:
@@ -293,6 +304,7 @@ class SinaFinanceNewsCrawler:
         """
         try:
             market_type, code = self._parse_stock_code(stock_code)
+            logger.info(f"正在获取 {stock_code} 的新闻...")
 
             news_list = self._scrape_news_page(market_type, code, max_news)
 
@@ -304,11 +316,14 @@ class SinaFinanceNewsCrawler:
                     seen_titles.add(news['title'])
                     unique_news.append(news)
 
+            logger.info(f"成功获取 {len(unique_news)} 条新闻")
             return unique_news[:max_news]
 
         except ValueError as e:
+            logger.error(f"参数错误: {e}")
             return []
         except Exception as e:
+            logger.error(f"获取新闻失败: {e}")
             import traceback
             traceback.print_exc()
             return []
@@ -332,10 +347,13 @@ class SinaFinanceNewsCrawler:
         """
         result = {}
         total = len(stock_codes)
+        logger.info(f"开始批量获取 {total} 只股票的新闻...")
 
         for i, stock_code in enumerate(stock_codes, 1):
+            logger.info(f"[{i}/{total}] 处理股票: {stock_code}")
             result[stock_code] = self.get_stock_news(stock_code, max_news=max_news)
 
+        logger.info(f"批量获取完成！共处理 {total} 只股票")
         return result
 
 
@@ -355,6 +373,7 @@ def main():
   %(prog)s HK.00700 --max 10                 # 获取最多10条新闻
   %(prog)s HK.00700 --delay 2                # 设置请求间隔为2秒
   %(prog)s HK.00700 --json                   # 以JSON格式输出
+  %(prog)s HK.00700 --verbose                # 显示详细日志
         '''
     )
 
@@ -366,8 +385,22 @@ def main():
                         help='请求间隔（秒），默认1秒')
     parser.add_argument('--json', action='store_true',
                         help='以JSON格式输出结果')
+    parser.add_argument('--verbose', '-v', action='store_true',
+                        help='显示详细日志（INFO级别），默认只显示WARNING及以上')
 
     args = parser.parse_args()
+
+    # 配置日志级别
+    log_level = logging.INFO if args.verbose else logging.WARNING
+    logging.basicConfig(
+        level=log_level,
+        format='%(levelname)s: %(message)s'
+    )
+
+    # 第三方库使用相同的日志级别
+    logging.getLogger('scrapling').setLevel(log_level)
+    logging.getLogger('httpx').setLevel(log_level)
+    logging.getLogger('httpcore').setLevel(log_level)
 
     with SinaFinanceNewsCrawler(delay=args.delay) as crawler:
         if len(args.stock_codes) == 1:
